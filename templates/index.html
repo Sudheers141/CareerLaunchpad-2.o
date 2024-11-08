@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Launchpad</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header with NVIDIA API Status -->
+        <header>
+            <h1>Career Launchpad</h1>
+            <p>Track your job applications and receive customized resume feedback</p>
+            <div id="api-status" class="api-status">NVIDIA API: <span id="api-status-indicator">Active</span></div>
+        </header>
+
+        <!-- Main Content Area for Form and Chat Box -->
+        <div class="content-area">
+            <!-- Application Form -->
+            <section class="form-section">
+                <form id="applicationForm">
+                    <label for="company">Company:</label>
+                    <input type="text" id="company" name="company" required placeholder="Enter company name">
+
+                    <label for="job_title">Job Title:</label>
+                    <input type="text" id="job_title" name="job_title" required placeholder="Enter job title">
+
+                    <label for="job_description">Job Description:</label>
+                    <textarea id="job_description" name="job_description" rows="5" required placeholder="Paste job description"></textarea>
+
+                    <label for="resume_text">Resume Text:</label>
+                    <textarea id="resume_text" name="resume_text" rows="5" placeholder="Paste your resume text"></textarea>
+
+                    <label for="resume_file">Upload Resume (TXT, PDF, DOCX):</label>
+                    <input type="file" id="resume_file" name="resume_file" accept=".txt, .pdf, .docx">
+
+                    <div class="button-group">
+                        <button type="submit" class="submit-btn">Submit Application</button>
+                        <button type="button" onclick="clearForm()" class="clear-btn">Clear Form</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Chat Interface for Assistance -->
+            <section id="chat-interface">
+                <h4>Chat with Us</h4>
+                <div id="chat-messages" class="chat-box"></div>
+                <input type="text" id="chat-input" placeholder="Type your message...">
+                <button onclick="sendMessage()" class="chat-btn">Send</button>
+            </section>
+        </div>
+
+        <!-- Display Response Section -->
+        <section id="response" style="display: none;">
+            <div class="response-section">
+                <h3>Match Score</h3>
+                <div id="match-score-bar-container">
+                    <div id="match-score-bar"></div>
+                </div>
+                <div id="match-score" class="response-box"></div>
+            </div>
+
+            <div class="feedback-section">
+                <h4>Feedback</h4>
+                <div id="feedback" class="response-box"></div>
+            </div>
+
+            <div class="suggestions-section">
+                <h4>Detailed Suggestions</h4>
+                <div id="suggestions" class="response-box"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/script.js"></script>
+    <script>
+        // Check NVIDIA API Status
+        document.addEventListener("DOMContentLoaded", async () => {
+            const response = await fetch("/check_nvidia_api_status");
+            const data = await response.json();
+            const apiStatusIndicator = document.getElementById("api-status-indicator");
+            if (data.status === "available") {
+                apiStatusIndicator.textContent = "Active";
+                apiStatusIndicator.style.color = "green";
+            } else {
+                apiStatusIndicator.textContent = "Unavailable";
+                apiStatusIndicator.style.color = "red";
+            }
+        });
+    </script>
+</body>
+</html>

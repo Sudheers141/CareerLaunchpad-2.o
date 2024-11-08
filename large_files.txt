@@ -1,0 +1,5 @@
+
+"D:\CareerLaunchpad\CareerLaunchpad\CareerLaunchpad-first-version\.git\objects\pack\pack-3a363b3a684937e1f1c2a35c6a02df15946bd19c.pack" 307984710
+"D:\CareerLaunchpad\CareerLaunchpad\CareerLaunchpad-first-version\.git\objects\pack\pack-fe91e304092521ee773cd9accfd2185fd18438c9.pack" 153648611
+"D:\CareerLaunchpad\CareerLaunchpad\CareerLaunchpad-first-version\myenv_CareerLaunchpad\Lib\site-packages\torch\lib\dnnl.lib" 653548548
+"D:\CareerLaunchpad\CareerLaunchpad\CareerLaunchpad-first-version\myenv_CareerLaunchpad\Lib\site-packages\torch\lib\torch_cpu.dll" 249312768
