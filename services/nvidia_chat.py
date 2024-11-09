@@ -2,20 +2,23 @@ from openai import OpenAI
 import os
 import logging
 import re
+import torch  # Import PyTorch to enable GPU usage
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class NvidiaChatService:
-    def __init__(self, api_key=None, model_name="nvidia/llama-3.1-nemotron-70b-instruct"):
+    def __init__(self, api_key=None, model_name="nvidia/llama-3.1-nemotron-70b-instruct", device=None):
         """
-        Initialize the NVIDIA chat service with the specified model.
+        Initialize the NVIDIA chat service with the specified model and set up GPU compatibility.
         """
         api_key = api_key or os.getenv("NVIDIA_API_KEY_NEW")
         self.client = OpenAI(api_key=api_key, base_url="https://integrate.api.nvidia.com/v1")
         self.model_name = model_name
-        logger.info("NvidiaChatService initialized with model: %s", self.model_name)
+        # Set the device to GPU if available
+        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info("NvidiaChatService initialized with model: %s on device: %s", self.model_name, self.device)
 
     def get_chat_response(self, user_query: str, context: dict = None):
         """

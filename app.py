@@ -10,6 +10,7 @@ import PyPDF2
 import os
 import logging
 import json
+import torch  # Import PyTorch for GPU support
 
 # Initialize the Flask app and logging
 app = Flask(__name__)
@@ -17,9 +18,13 @@ app.secret_key = os.urandom(24)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Check for GPU availability
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger.info(f"Using device: {device}")
+
 # Initialize the database and services
 initialize_database()
-resume_matcher = ResumeMatchingService()
+resume_matcher = ResumeMatchingService(device=device)  # Pass device to services if needed
 feedback_generator = FeedbackGenerator()
 embedding_service = NvidiaEmbeddingService(api_key=Config.NVIDIA_API_KEY)
 chat_service = NvidiaChatService(api_key=Config.NVIDIA_API_KEY_NEW)

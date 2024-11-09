@@ -1,8 +1,8 @@
-# services/resume_matching.py
 from openai import OpenAI
 import logging
 import numpy as np
 import os
+import torch  # Import PyTorch for GPU compatibility
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -13,7 +13,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 class ResumeMatchingService:
-    def __init__(self):
+    def __init__(self, device=None):
         """Initialize the OpenAI client for NVIDIA API with the provided API key."""
         try:
             self.client = OpenAI(
@@ -21,7 +21,8 @@ class ResumeMatchingService:
                 base_url="https://integrate.api.nvidia.com/v1"
             )
             self.model_name = "nvidia/nv-embedqa-e5-v5"
-            logger.info("ResumeMatchingService initialized.")
+            self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            logger.info("ResumeMatchingService initialized on device: %s", self.device)
         except Exception as e:
             logger.error(f"Error initializing ResumeMatchingService: {e}")
             raise
@@ -30,7 +31,7 @@ class ResumeMatchingService:
         """Truncate text to a specified maximum length."""
         return text[:max_length]
 
-    def get_embedding(self, text: str) -> Optional[np.ndarray]:
+    def get_embedding(self, text: str) -> Optional[torch.Tensor]:
         """Generate embeddings for a given text using NVIDIA's model."""
         try:
             truncated_text = self.truncate_text(text)
@@ -42,7 +43,8 @@ class ResumeMatchingService:
             )
             # Accessing the embedding from the correct response structure
             embedding = response.data[0].embedding
-            return np.array(embedding, dtype=np.float32)
+            # Convert the embedding to a PyTorch tensor and move to the specified device
+            return torch.tensor(embedding, dtype=torch.float32).to(self.device)
         except Exception as e:
             logger.error(f"Failed to get embedding for text: {e}")
             return None
@@ -58,11 +60,11 @@ class ResumeMatchingService:
                 logger.error("One or both embeddings could not be retrieved.")
                 return 0.0
 
-            # Calculate cosine similarity
-            similarity = np.dot(job_embedding, resume_embedding) / (
-                np.linalg.norm(job_embedding) * np.linalg.norm(resume_embedding)
+            # Calculate cosine similarity using PyTorch (on GPU if available)
+            similarity = torch.dot(job_embedding, resume_embedding) / (
+                torch.norm(job_embedding) * torch.norm(resume_embedding)
             )
-            return round(similarity * 100, 2)  # Return as a percentage
+            return round(similarity.item() * 100, 2)  # Convert to percentage and return as float
         except Exception as e:
             logger.error(f"Error in calculating match score: {e}")
             return 0.0

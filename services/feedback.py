@@ -1,6 +1,6 @@
-# feedback.py
 import logging
 import numpy as np
+import torch  # Import PyTorch to enable GPU usage
 from typing import Dict, List
 from services.nvidia_embeddings import NvidiaEmbeddingService  # Correct import
 import os
@@ -16,7 +16,9 @@ class FeedbackGenerator:
         try:
             # Initialize EmbeddingService with the embedding model
             self.embedding_service = NvidiaEmbeddingService(model_name="nvidia/nv-embedqa-e5-v5")
-            logger.info("FeedbackGenerator initialized.")
+            # Set the device to GPU if available
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            logger.info("FeedbackGenerator initialized on device: %s", self.device)
         except Exception as e:
             logger.error(f"Error initializing FeedbackGenerator: {e}")
             raise
@@ -24,7 +26,9 @@ class FeedbackGenerator:
     def get_embedding(self, text: str):
         """Generate embeddings for a given text using EmbeddingService."""
         try:
-            return self.embedding_service.get_job_description_embedding(text)
+            embedding = self.embedding_service.get_embedding(text)
+            # Move embedding to GPU if available
+            return torch.tensor(embedding, device=self.device, dtype=torch.float32)
         except Exception as e:
             logger.error(f"Failed to get embedding for text: {e}")
             raise
@@ -34,8 +38,12 @@ class FeedbackGenerator:
         try:
             job_embedding = self.get_embedding(job_description)
             resume_embedding = self.get_embedding(resume_text)
-            similarity = np.dot(job_embedding, resume_embedding) / (np.linalg.norm(job_embedding) * np.linalg.norm(resume_embedding))
-            return {"match_score": round(similarity * 100, 2)}
+            
+            # Calculate cosine similarity on GPU
+            similarity = torch.dot(job_embedding, resume_embedding) / (
+                torch.norm(job_embedding) * torch.norm(resume_embedding)
+            )
+            return {"match_score": round(similarity.item() * 100, 2)}  # Move similarity back to CPU for returning
         except Exception as e:
             logger.error(f"Error in calculating keyword match: {e}")
             return {"match_score": 0.0}

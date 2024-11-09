@@ -122,6 +122,12 @@ Testing NVIDIA API Integration:
             
     This script checks that the API is correctly configured and returns a sample response.
     
+
+Version 2.0.1 - Minor Update
+
+- Enabled GPU compatibility: Modified the application to leverage GPU where available, enhancing processing speed for embedding and other compute-intensive tasks.
+- Optimized NVIDIA API integration: Refined the chat and embedding services to ensure efficient use of cloud resources for faster response times.
+- Hardware testing clarification: Aligned the project’s hardware testing setup with NVIDIA's cloud infrastructure, utilizing cloud GPUs for model operations.
     
     
     
