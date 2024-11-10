@@ -24,7 +24,7 @@ logger.info(f"Using device: {device}")
 
 # Initialize the database and services
 initialize_database()
-resume_matcher = ResumeMatchingService(device=device)  # Pass device to services if needed
+resume_matcher = ResumeMatchingService(device=device)
 feedback_generator = FeedbackGenerator()
 embedding_service = NvidiaEmbeddingService(api_key=Config.NVIDIA_API_KEY)
 chat_service = NvidiaChatService(api_key=Config.NVIDIA_API_KEY_NEW)
@@ -96,9 +96,11 @@ def submit_application():
         )
         resume_id = add_resume("User", resume_text)  # Replace "User" with actual user identifier if available
 
-        # Store only application_id in the session
+        # Store application and resume IDs in the session
         session['application_id'] = application_id
-        logger.info("Application submitted with ID: %s", application_id)
+        session['resume_id'] = resume_id  # Store resume ID as well for future use
+        chat_service.clear_memory()  # Clear any previous chat memory
+        logger.info("Application submitted with ID: %s and Resume ID: %s", application_id, resume_id)
 
         # Return response to frontend
         response = {
@@ -114,6 +116,16 @@ def submit_application():
         logger.error(f"Error in /submit_application: {str(e)}", exc_info=True)
         return jsonify({"error": "An unexpected error occurred. Please check the server logs for more details."}), 500
 
+@app.route('/clear_all_data', methods=['POST'])
+def clear_all_data():
+    """
+    Clears the session and resets the chat memory to handle new user submissions.
+    """
+    session.clear()  # Clear all session data
+    chat_service.clear_memory()  # Clear chat memory to reset context
+    logger.info("Session and chat memory cleared.")
+    return jsonify({"status": "Session and memory cleared successfully."})
+
 @app.route('/chat', methods=['POST'])
 def chat():
     """Chat endpoint to provide contextualized responses based on user query and previous application data."""
@@ -122,17 +134,18 @@ def chat():
         if not user_query:
             return jsonify({"error": "Query is required."}), 400
 
-        # Retrieve application data from the database using application_id in session
+        # Retrieve application and resume data using session IDs
         application_id = session.get('application_id')
-        if application_id:
+        resume_id = session.get('resume_id')
+        if application_id and resume_id:
             application_data = get_job_application_by_id(application_id)
-            resume_data = get_resume(application_id)  # Fetch resume data based on application ID
-            
+            resume_data = get_resume(resume_id)  # Fetch resume data based on resume ID
+
             # Convert stored JSON strings back to dictionaries/lists and include resume text
             application_data['feedback'] = json.loads(application_data['feedback'])
             application_data['suggestions'] = json.loads(application_data['suggestions'])
             application_data['resume_text'] = resume_data['resume_text'] if resume_data else "N/A"  # Add resume text to context
-            
+
             context = application_data
         else:
             context = {}

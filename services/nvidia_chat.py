@@ -1,3 +1,4 @@
+# nvidia_chat.py
 from openai import OpenAI
 import os
 import logging
@@ -18,6 +19,7 @@ class NvidiaChatService:
         self.model_name = model_name
         # Set the device to GPU if available
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.chat_memory = []  # Initialize chat memory to store conversation history
         logger.info("NvidiaChatService initialized with model: %s on device: %s", self.model_name, self.device)
 
     def get_chat_response(self, user_query: str, context: dict = None):
@@ -53,20 +55,21 @@ class NvidiaChatService:
             resume_text = context.get('resume_text', 'N/A')[:500]
             context_message += f" Here are the details of the job application: {' '.join(details)} Resume: {resume_text}"
 
+        # Store the query in memory
+        self.chat_memory.append({"role": "user", "content": user_query})
+
         try:
             logger.info("Sending query to NVIDIA chat API with context: %s", context_message)
             response = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=[
-                    {"role": "system", "content": context_message},
-                    {"role": "user", "content": user_query}
-                ],
+                messages=[{"role": "system", "content": context_message}] + self.chat_memory,
                 temperature=0.2,
                 max_tokens=1024
             )
-            
+
             if response and response.choices:
                 bot_response = response.choices[0].message.content
+                self.chat_memory.append({"role": "assistant", "content": bot_response})  # Save response in memory
                 logger.info("Received response from NVIDIA chat API")
                 return self.format_response(bot_response)
             else:
@@ -76,6 +79,11 @@ class NvidiaChatService:
         except Exception as e:
             logger.error(f"Error generating chat response: {e}")
             return "An error occurred while generating a response."
+
+    def clear_memory(self):
+        """Clear the chat memory."""
+        self.chat_memory = []
+        logger.info("Chat memory cleared.")
 
     def format_response(self, response: str) -> str:
         """
